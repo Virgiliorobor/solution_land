@@ -1,0 +1,1160 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solution Creator — How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;600;800;900&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Token system (TE reference) ── */
+  :root {
+    --grey-0: #f5f4f1;
+    --grey-1: #eceae6;
+    --grey-2: #e0ddd8;
+    --grey-3: #d3cfc9;
+    --grey-4: #bfbab3;
+    --grey-5: #9d988f;
+    --hair:   #c7c2ba;
+    --hair-soft: #d8d4cd;
+
+    --ink:   #1a1917;
+    --ink-2: #34322e;
+    --ink-3: #6b6760;
+    --screen:   #16140f;
+    --screen-2: #211e18;
+
+    --orange:      #ff4f00;
+    --orange-deep: #e84600;
+
+    --pop-red:    #e23b2e;
+    --pop-green:  #2f9e62;
+    --pop-blue:   #2f6bf0;
+    --pop-yellow: #f4b400;
+
+    --lcd-amber: #ffae3a;
+    --lcd-green: #7dffb0;
+
+    --r-panel: 4px;
+    --r-key:   9px;
+    --r-pill:  999px;
+
+    --sans: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --dot:  "Doto", "JetBrains Mono", monospace;
+
+    --raise:  0 1px 0 rgba(255,255,255,.7) inset,
+              0 1px 2px rgba(20,18,14,.14),
+              0 6px 16px -8px rgba(20,18,14,.25);
+    --recess: 0 1px 1px rgba(255,255,255,.6),
+              inset 0 1px 3px rgba(20,18,14,.28),
+              inset 0 0 0 1px rgba(20,18,14,.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background:
+      radial-gradient(130% 80% at 50% -5%, #dedad3, transparent 55%),
+      var(--grey-3);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  ::selection { background: var(--orange); color: #fff; }
+
+  /* ── Layout ── */
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+
+  /* ── Nav ── */
+  nav {
+    background: linear-gradient(180deg, var(--grey-1), var(--grey-2));
+    border-bottom: 1px solid var(--hair);
+    box-shadow: var(--raise);
+    position: sticky; top: 0; z-index: 50;
+  }
+  nav .wrap {
+    display: flex; align-items: center; gap: 14px;
+    padding-top: 12px; padding-bottom: 12px;
+  }
+  .logo {
+    font-family: var(--sans); font-size: 14px; font-weight: 800;
+    letter-spacing: .02em; color: var(--ink);
+  }
+  .logo span { color: var(--orange); }
+
+  .nav-tag {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    color: var(--ink-3); background: var(--grey-0);
+    border: 1px solid var(--hair); border-radius: 3px;
+    padding: 2px 7px;
+  }
+  .nav-right { margin-left: auto; }
+  .nav-link {
+    font-family: var(--sans); font-size: 12px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ink-3);
+    background: linear-gradient(180deg, var(--grey-0), var(--grey-2));
+    border: 1px solid var(--hair); border-radius: var(--r-pill);
+    padding: 6px 14px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 2px 4px -2px rgba(20,18,14,.2);
+    text-decoration: none;
+    transition: filter .12s;
+  }
+  .nav-link:hover { filter: brightness(.95); }
+
+  /* ── Section label (engraved) ── */
+  .te-label {
+    font-family: var(--sans); font-size: 10px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-3); line-height: 1;
+  }
+
+  /* ── Section header strip ── */
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 22px;
+  }
+  .sec-no {
+    font-family: var(--dot); font-weight: 900; font-size: 16px;
+    color: var(--orange); letter-spacing: .05em; line-height: 1;
+    flex: none;
+  }
+  .sec-head h2 {
+    font-size: 13px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink); margin: 0;
+  }
+  .sec-line { flex: 1; height: 1px; background: var(--hair); }
+  .sec-cap {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    flex: none;
+  }
+
+  /* ── Panel surfaces ── */
+  .te-panel {
+    background: linear-gradient(180deg, var(--grey-1), var(--grey-2));
+    border: 1px solid var(--hair);
+    border-radius: var(--r-panel);
+    box-shadow: var(--raise);
+  }
+  .te-recess {
+    background: linear-gradient(180deg, var(--grey-2), var(--grey-1));
+    border: 1px solid var(--hair);
+    border-radius: var(--r-panel);
+    box-shadow: var(--recess);
+  }
+
+  /* ── Recessed screen (for outputs / code) ── */
+  .te-screen {
+    background:
+      radial-gradient(120% 140% at 30% 0%, rgba(255,255,255,.05), transparent 60%),
+      linear-gradient(180deg, var(--screen-2), var(--screen));
+    border-radius: var(--r-panel);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.7),
+                inset 0 0 0 1px rgba(0,0,0,.6),
+                0 1px 0 rgba(255,255,255,.55);
+    color: var(--lcd-amber);
+    position: relative;
+    padding: 8px 12px;
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .02em;
+  }
+  .te-screen::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px);
+    mix-blend-mode: screen; opacity: .5;
+  }
+
+  /* ── Tags ── */
+  .te-tag {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: .04em;
+    color: var(--ink-2); background: var(--grey-0);
+    border: 1px solid var(--hair); border-radius: 3px;
+    padding: 2px 7px; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .te-tag--orange { background: color-mix(in srgb, var(--orange), #fff 84%); border-color: color-mix(in srgb, var(--orange), #fff 55%); color: var(--orange-deep); }
+  .te-tag--green  { background: color-mix(in srgb, var(--pop-green), #fff 84%); border-color: color-mix(in srgb, var(--pop-green), #fff 55%); color: #1f7044; }
+  .te-tag--blue   { background: color-mix(in srgb, var(--pop-blue), #fff 86%); border-color: color-mix(in srgb, var(--pop-blue), #fff 55%); color: #1f49b0; }
+  .te-tag--yellow { background: color-mix(in srgb, var(--pop-yellow), #fff 80%); border-color: color-mix(in srgb, var(--pop-yellow), #fff 50%); color: #9a7000; }
+  .te-tag--red    { background: color-mix(in srgb, var(--pop-red), #fff 84%); border-color: color-mix(in srgb, var(--pop-red), #fff 55%); color: #a82418; }
+  .te-tag--ink    { background: var(--ink-2); border-color: var(--ink); color: var(--grey-0); }
+
+  /* ── Hairline divider ── */
+  .te-rule { height: 1px; background: var(--hair); border: 0; margin: 0; }
+
+  /* ── Gate pill ── */
+  .gate-pill {
+    font-family: var(--sans); font-size: 10px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(180deg, var(--orange), var(--orange-deep));
+    border: 1px solid var(--orange-deep); border-radius: var(--r-pill);
+    padding: 4px 11px; white-space: nowrap; flex: none; align-self: flex-start;
+  }
+  .gate-pill--user {
+    background: linear-gradient(180deg, var(--grey-0), var(--grey-2));
+    color: var(--ink-3);
+    border-color: var(--hair);
+    box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+  }
+
+  /* ══════════════════════════════════
+     HERO
+  ══════════════════════════════════ */
+  .hero {
+    padding: 70px 0 60px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .hero-inner {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 32px; align-items: end;
+  }
+  .hero h1 {
+    font-size: 44px; font-weight: 800; letter-spacing: -.03em;
+    line-height: 1.1; color: var(--ink); margin-bottom: 20px;
+  }
+  .hero h1 em { font-style: normal; color: var(--orange); }
+  .hero .lead {
+    font-size: 16px; color: var(--ink-3); max-width: 560px; line-height: 1.65;
+    font-weight: 400;
+  }
+  .hero-meta {
+    text-align: right; font-family: var(--mono);
+    font-size: 10.5px; color: var(--ink-3); line-height: 1.8;
+  }
+  .hero-meta b { color: var(--ink); }
+
+  /* ══════════════════════════════════
+     SECTION WRAPPER
+  ══════════════════════════════════ */
+  .page-section {
+    padding: 52px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .page-section:last-child { border-bottom: none; }
+
+  /* ══════════════════════════════════
+     WHAT THIS IS — three pillars
+  ══════════════════════════════════ */
+  .intro-body {
+    font-size: 14px; color: var(--ink-3); line-height: 1.7;
+    margin-bottom: 24px;
+  }
+  .intro-body strong { color: var(--ink); }
+  .intro-body + .intro-body { margin-bottom: 28px; }
+
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pillar { padding: 20px; }
+  .pillar .p-num {
+    font-family: var(--dot); font-weight: 900; font-size: 22px;
+    color: var(--orange); line-height: 1; margin-bottom: 10px;
+  }
+  .pillar .p-modhead {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 10px; margin-bottom: 12px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .pillar h3 { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .pillar p { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+
+  /* ══════════════════════════════════
+     PIPELINE
+  ══════════════════════════════════ */
+  .pipeline-intro {
+    font-size: 14px; color: var(--ink-3); margin-bottom: 28px; line-height: 1.7;
+  }
+  .pipeline { display: flex; flex-direction: column; gap: 5px; }
+
+  .stage {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 14px; align-items: start;
+    padding: 15px 18px;
+    position: relative;
+  }
+  .stage + .stage { margin-top: 4px; }
+
+  /* connector line between stages */
+  .stage-connector {
+    display: flex; align-items: center; padding: 0 18px;
+    gap: 0;
+  }
+  .stage-connector .line {
+    width: 1px; height: 14px; background: var(--hair); margin-left: 10px;
+  }
+
+  .stage-name {
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3);
+    margin-bottom: 3px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .stage-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid var(--hair); background: var(--grey-2); flex: none;
+  }
+  .stage-dot.active { border-color: var(--orange); background: var(--orange); }
+
+  .stage-desc {
+    font-size: 13.5px; color: var(--ink); margin-bottom: 8px; line-height: 1.55;
+  }
+  .stage-output { margin-top: 8px; }
+
+  .stage-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+
+  /* ══════════════════════════════════
+     SUB-SYSTEMS GRID
+  ══════════════════════════════════ */
+  .systems { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+  .sys-card { padding: 20px; border-top-width: 3px; }
+  .sys-card.c-green  { border-top-color: var(--pop-green); }
+  .sys-card.c-yellow { border-top-color: var(--pop-yellow); }
+  .sys-card.c-blue   { border-top-color: var(--pop-blue); }
+  .sys-card.c-orange { border-top-color: var(--orange); }
+  .sys-card.c-red    { border-top-color: var(--pop-red); }
+  .sys-card.c-ink    { border-top-color: var(--ink); }
+
+  .sys-card .sys-head {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 10px;
+    padding-bottom: 10px; margin-bottom: 12px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .sys-card h3 { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .sys-card p { font-size: 13px; color: var(--ink-3); margin-bottom: 12px; line-height: 1.6; }
+  .sys-card .sys-output { margin-top: auto; }
+
+  /* ══════════════════════════════════
+     GATE MODEL
+  ══════════════════════════════════ */
+  .gate-intro {
+    font-size: 14px; color: var(--ink-3); margin-bottom: 24px; line-height: 1.7;
+  }
+  .gates { display: flex; flex-direction: column; }
+  .gate-row {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--hair-soft);
+  }
+  .gate-row:first-child { border-top: 1px solid var(--hair-soft); }
+  .gate-index {
+    font-family: var(--dot); font-size: 13px; font-weight: 900;
+    color: var(--orange); flex: none; line-height: 1.4;
+    min-width: 22px;
+  }
+  .gate-row h4 { font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .gate-row p { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.55; }
+
+  /* ══════════════════════════════════
+     DESIGN DECISIONS
+  ══════════════════════════════════ */
+  .decisions { display: flex; flex-direction: column; gap: 10px; }
+  .decision { padding: 18px 20px; display: grid; grid-template-columns: 44px 1fr; gap: 0 12px; }
+  .decision-glyph {
+    font-family: var(--mono); font-size: 18px; color: var(--ink-3);
+    grid-row: span 2; display: flex; align-items: flex-start;
+    padding-top: 2px; justify-content: center;
+  }
+  .decision h3 { font-size: 13.5px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .decision p { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.65; }
+  .decision p code {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--orange-deep);
+    background: color-mix(in srgb, var(--orange), #fff 90%);
+    border: 1px solid color-mix(in srgb, var(--orange), #fff 65%);
+    border-radius: 3px; padding: 1px 5px;
+  }
+
+  /* ══════════════════════════════════
+     FILE TREE
+  ══════════════════════════════════ */
+  .file-tree-wrap { margin-top: 22px; }
+  .file-tree-head {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(0,0,0,.5);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .file-tree-head span {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--lcd-amber); opacity: .6; letter-spacing: .08em;
+  }
+  .file-tree-body { padding: 16px 18px; font-family: var(--mono); font-size: 12px; line-height: 2; }
+  .ft-dir { color: var(--lcd-amber); font-weight: 700; }
+  .ft-file { color: color-mix(in srgb, var(--lcd-amber), #000 20%); padding-left: 18px; opacity: .85; }
+  .ft-file em { font-style: normal; color: var(--lcd-green); }
+  .ft-gap { height: 6px; }
+
+  /* ══════════════════════════════════
+     NOT LIST
+  ══════════════════════════════════ */
+  .not-list { display: flex; flex-direction: column; }
+  .not-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--hair-soft);
+    font-size: 13.5px;
+  }
+  .not-row:first-child { border-top: 1px solid var(--hair-soft); }
+  .not-x {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    color: var(--pop-red); flex: none; margin-top: 1px;
+  }
+  .not-row strong { color: var(--ink); }
+  .not-row span { color: var(--ink-3); }
+
+  /* ══════════════════════════════════
+     FOOTER
+  ══════════════════════════════════ */
+  footer {
+    background: linear-gradient(180deg, var(--grey-2), var(--grey-3));
+    border-top: 1px solid var(--hair);
+    box-shadow: 0 -1px 0 rgba(255,255,255,.6);
+    padding: 20px 0;
+  }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .footer-brand { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .footer-brand span { color: var(--orange); }
+  .footer-agents { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* ══════════════════════════════════
+     EXAMPLE PROJECT CARD (section 08)
+  ══════════════════════════════════ */
+  .ex-card {
+    border: 1px solid var(--hair);
+    border-radius: var(--r-panel);
+    background: linear-gradient(180deg, var(--grey-0), var(--grey-1));
+    box-shadow: var(--raise);
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  .ex-head {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--hair);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ex-id {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: .01em;
+  }
+  .ex-src {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    border: 1px solid var(--hair);
+    border-radius: 3px;
+    padding: 2px 7px;
+    background: var(--grey-1);
+  }
+  .ex-build-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    padding: 3px 9px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--pop-green), #fff 84%);
+    border: 1px solid color-mix(in srgb, var(--pop-green), #fff 52%);
+    color: color-mix(in srgb, var(--pop-green), #000 15%);
+  }
+  .ex-stages {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--hair-soft);
+    background: var(--grey-1);
+  }
+  .ex-stage {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--hair);
+    color: var(--ink-3);
+    background: var(--grey-2);
+  }
+  .ex-stage.done {
+    background: var(--grey-0);
+    color: var(--ink-2);
+  }
+  .ex-stage.done::before { content: '✓ '; color: var(--pop-green); }
+  .ex-stage.pending {
+    background: color-mix(in srgb, var(--orange), #fff 92%);
+    border-color: color-mix(in srgb, var(--orange), #fff 55%);
+    color: var(--orange-deep);
+    font-weight: 700;
+  }
+  .ex-artifacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--hair-soft);
+  }
+  .ex-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 16px 20px;
+  }
+  .ex-desc { font-size: 13px; color: var(--ink-3); line-height: 1.65; max-width: 580px; }
+  .ex-link {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange-deep);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 9px 18px;
+    border: 1px solid color-mix(in srgb, var(--orange), #fff 48%);
+    background: color-mix(in srgb, var(--orange), #fff 90%);
+    border-radius: 3px;
+  }
+  .ex-link:hover {
+    background: color-mix(in srgb, var(--orange), #fff 82%);
+  }
+
+  /* ══════════════════════════════════
+     PIPELINE FLOW BLOCKS
+  ══════════════════════════════════ */
+  .flow-block { padding: 22px 24px; border-radius: var(--r-panel); }
+
+  .flow-block-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+
+  .flow-arrow {
+    text-align: left; padding: 4px 0 4px 28px;
+    font-family: var(--mono); font-size: 16px; color: var(--ink-3);
+    line-height: 1;
+  }
+
+  /* input block */
+  .flow-input {
+    background: color-mix(in srgb, var(--orange), #fff 92%);
+    border: 1.5px solid color-mix(in srgb, var(--orange), #fff 52%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 2px 8px -4px rgba(20,18,14,.15);
+  }
+  .flow-input .flow-block-label { color: var(--orange-deep); }
+  .input-fields { display: flex; flex-direction: column; gap: 12px; }
+  .input-row { display: grid; grid-template-columns: 90px 1fr; gap: 16px; align-items: start; }
+  .input-key {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    color: var(--orange-deep); padding-top: 2px; letter-spacing: .04em;
+  }
+  .input-val { font-size: 14px; color: var(--ink); margin-bottom: 3px; line-height: 1.45; }
+  .input-note { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+
+  /* automated block */
+  .flow-auto .flow-block-label { color: var(--ink-3); }
+  .auto-stages { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .stage-chip {
+    font-family: var(--sans); font-size: 12px; font-weight: 700;
+    padding: 6px 13px; border-radius: 3px;
+    border: 1px solid var(--hair);
+    background: linear-gradient(180deg, var(--grey-1), var(--grey-2));
+    box-shadow: var(--raise);
+    color: var(--ink-2);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .stage-chip::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: var(--grey-4);
+  }
+  .chip-green::before  { background: var(--pop-green); }
+  .chip-yellow::before { background: var(--pop-yellow); }
+  .chip-blue::before   { background: var(--pop-blue); }
+  .chip-orange::before { background: var(--orange); }
+  .chip-ink::before    { background: var(--ink); }
+  .chip-red::before    { background: var(--pop-red); }
+  .auto-note { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+
+  /* deploy cols */
+  .deploy-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .deploy-col { padding: 20px; }
+  .deploy-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .deploy-col p { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+
+  @media (max-width: 680px) {
+    .pillars { grid-template-columns: 1fr; }
+    .systems { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 30px; }
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-meta { text-align: left; }
+    .deploy-cols { grid-template-columns: 1fr; }
+    .input-row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="wrap">
+    <div class="logo">Solution <span>Creator</span></div>
+    <span class="nav-tag">v0.2</span>
+    <div class="nav-right">
+      <a class="nav-link" href="athletic-os/">Example project →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-inner">
+      <div>
+        <h1>From concept<br>to <em>deployed software.</em></h1>
+        <p class="lead">
+          You provide the concept and a git repository once.
+          The pipeline runs end to end — every specialist, every stage —
+          until the audit is done and the code is pushed live.
+        </p>
+      </div>
+      <div class="hero-meta">
+        <div>SYS&nbsp;·&nbsp;<b>solution-creator</b></div>
+        <div>VER&nbsp;·&nbsp;<b>0.2</b></div>
+        <div>BASE&nbsp;·&nbsp;<b>ICM methodology</b></div>
+        <div>AGENTS&nbsp;·&nbsp;<b>07</b></div>
+        <div>GATES&nbsp;·&nbsp;<b>02</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     01 — WHAT THIS IS
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">01</span>
+      <h2>What this is</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">meta-system · concept to production</span>
+    </div>
+
+    <p class="intro-body">
+      Solution Creator is not a coding assistant. It is a structured pipeline where
+      <strong>specialized sub-systems handle each phase</strong> of a build —
+      concept, process, architecture, design, visual design, construction, audit,
+      and deployment — in sequence. You provide the concept and the git repository at the start.
+      Everything else runs. You return at the audit.
+    </p>
+    <p class="intro-body" style="margin-bottom:28px;">
+      Every software solution requires the same three things to exist.
+      Solution Creator connects them into a single coordinated pipeline, with a
+      <strong>meta-orchestrator</strong> above all three.
+    </p>
+
+    <div class="pillars">
+      <div class="pillar te-panel">
+        <div class="p-modhead">
+          <div class="p-num">01</div>
+          <h3 class="te-label te-label--ink">Process clarity</h3>
+        </div>
+        <p>A clear understanding of the real-world workflow being automated — what the software actually does and why.</p>
+      </div>
+      <div class="pillar te-panel">
+        <div class="p-modhead">
+          <div class="p-num">02</div>
+          <h3 class="te-label te-label--ink">Agent architecture</h3>
+        </div>
+        <p>An intelligent agent layer that supports the process — specialists, boundaries, handoffs, and shared memory.</p>
+      </div>
+      <div class="pillar te-panel">
+        <div class="p-modhead">
+          <div class="p-num">03</div>
+          <h3 class="te-label te-label--ink">Working software</h3>
+        </div>
+        <p>Deployed, live code that implements the process and the agent layer — audited before it goes live.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     02 — THE PIPELINE
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">02</span>
+      <h2>The pipeline</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">two human moments · everything else runs</span>
+    </div>
+
+    <p class="pipeline-intro">
+      You provide the concept and the git repository once, at the start.
+      From there, the pipeline runs end to end without asking — every specialist,
+      every stage — until the audit report is ready. You read it. If it passes,
+      the code is pushed to your repository and the software goes live.
+    </p>
+
+    <div class="pipeline">
+
+      <!-- ── YOU PROVIDE ── -->
+      <div class="flow-block flow-input">
+        <div class="flow-block-label">You provide — once, at the start</div>
+        <div class="input-fields">
+          <div class="input-row">
+            <div class="input-key">Concept</div>
+            <div>
+              <div class="input-val">One line describing what you want to build.</div>
+              <div class="input-note">The Concept Developer runs a structured two-batch interview to develop this into a full brief covering goals, users, outcomes, and design ethos.</div>
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-key">Git repo</div>
+            <div>
+              <div class="input-val">The repository where the built code will be pushed.</div>
+              <div class="input-note">This is the only infrastructure you set up before the pipeline starts.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <!-- ── AUTOMATED ── -->
+      <div class="flow-block te-recess flow-auto">
+        <div class="flow-block-label">Automated · runs end to end without asking</div>
+        <div class="auto-stages">
+          <div class="stage-chip chip-green">Concept Developer</div>
+          <div class="stage-chip chip-yellow">Process Codifier</div>
+          <div class="stage-chip chip-blue">ICM Builder</div>
+          <div class="stage-chip">Designer</div>
+          <div class="stage-chip chip-orange">Visual Designer</div>
+          <div class="stage-chip chip-ink">Software Creator — plan</div>
+          <div class="stage-chip chip-ink">Software Creator — build</div>
+        </div>
+        <div class="auto-note">
+          Every concept brief, process map, architecture spec, design spec, visual token system, and line of code
+          is produced in sequence. Agents hand off between each other directly.
+          Nothing pauses for review.
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <!-- ── AUDIT ── -->
+      <div class="flow-block te-panel" style="border-top: 3px solid var(--pop-red);">
+        <div class="flow-block-label" style="color: var(--pop-red);">Audit · the only pause</div>
+        <p style="font-size: 14px; color: var(--ink); line-height: 1.6; margin: 0 0 14px;">
+          Audit Agent verifies every module in the build against the architecture spec.
+          Flags missing pieces, rule violations, and anything that would fail in production.
+          You read the report. It is the single decision point before deployment.
+        </p>
+        <div class="te-screen" style="padding: 9px 14px; font-family: var(--mono); font-size: 12px;">→ audit_report.md</div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <!-- ── DEPLOY ── -->
+      <div class="deploy-cols">
+        <div class="flow-block te-panel deploy-col">
+          <div class="deploy-label" style="color: var(--ink-3);">Code pushed to git</div>
+          <p>Everything built goes to the repository you provided at the start. Clean, complete, ready to deploy.</p>
+          <div class="te-screen" style="padding: 9px 14px; font-family: var(--mono); font-size: 12px; margin-top: 12px;">→ git push</div>
+        </div>
+        <div class="flow-block te-panel deploy-col" style="border-left: 3px solid var(--orange);">
+          <div class="deploy-label" style="color: var(--orange);">Env vars in Coolify</div>
+          <p>Coolify reads from your repository automatically. You add the environment variables once — database connection, API keys, domain. The software goes live.</p>
+          <div class="te-screen" style="padding: 9px 14px; font-family: var(--mono); font-size: 12px; margin-top: 12px;">→ live URL</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     03 — THE SPECIALISTS
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">03</span>
+      <h2>The specialists</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">seven agents · one meta-orchestrator</span>
+    </div>
+
+    <p class="gate-intro">
+      Each sub-system owns a defined phase of the pipeline. The meta-orchestrator coordinates between them — it routes, it never processes. Specialists run as subagents with clean contexts between gates.
+    </p>
+
+    <div class="systems">
+
+      <div class="sys-card te-panel c-green">
+        <div class="sys-head">
+          <div>
+            <h3>Concept Developer</h3>
+            <div class="te-label" style="margin-top:4px">Stage 2 — Concept</div>
+          </div>
+          <span class="te-tag te-tag--green">pop-green</span>
+        </div>
+        <p>Runs a structured two-batch interview: first establishes essence (goals, users, outcomes), second captures texture (design ethos, tone, principles). Then researches competitors and the domain's visual conventions before producing the brief all downstream stages build from.</p>
+        <div class="sys-output"><div class="te-screen">→ concept_brief.md</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-yellow">
+        <div class="sys-head">
+          <div>
+            <h3>Process Codifier</h3>
+            <div class="te-label" style="margin-top:4px">Stage 3 — Process</div>
+          </div>
+          <span class="te-tag te-tag--yellow">pop-yellow</span>
+        </div>
+        <p>Extracts and maps the real-world workflow behind the concept. Identifies stages, players, friction points, and the boundary between procedural work and decisions that require human judgment. The map is the foundation for the ICM architecture.</p>
+        <div class="sys-output"><div class="te-screen">→ process_map.md</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-blue">
+        <div class="sys-head">
+          <div>
+            <h3>ICM Builder</h3>
+            <div class="te-label" style="margin-top:4px">Stage 4 — Architecture</div>
+          </div>
+          <span class="te-tag te-tag--blue">pop-blue</span>
+        </div>
+        <p>Designs the multi-agent AI layer using Interpretable Context Methodology. Defines specialists and their boundaries, shared infrastructure (catalog, config, database, SOPs), master record schema, and the handoff data contracts between every specialist in the chain.</p>
+        <div class="sys-output"><div class="te-screen">→ icm_spec/ &nbsp;(identity · rules · examples · handoff per agent)</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-ink">
+        <div class="sys-head">
+          <div>
+            <h3>Designer</h3>
+            <div class="te-label" style="margin-top:4px">Stage 5 — Design</div>
+          </div>
+          <span class="te-tag te-tag--ink">ink</span>
+        </div>
+        <p>Translates the ICM architecture into a UI/UX specification. Defines views, user flows, role-based access, and interaction patterns before the software architecture is locked. This is a pre-architecture concern, not a build-time one.</p>
+        <div class="sys-output"><div class="te-screen">→ design_spec.md</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-orange">
+        <div class="sys-head">
+          <div>
+            <h3>Visual Designer</h3>
+            <div class="te-label" style="margin-top:4px">Stage 6 — Visual Design</div>
+          </div>
+          <span class="te-tag te-tag--orange">orange</span>
+        </div>
+        <p>Commits to one named visual direction — not a mood board, a decision. Derives a complete token system: color palette, type scale, spacing, shape, depth, motion. Produces a project-specific banned list to prevent generic AI defaults from appearing in the build.</p>
+        <div class="sys-output"><div class="te-screen">→ visual_spec.md &nbsp;(direction · tokens · banned list)</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-ink">
+        <div class="sys-head">
+          <div>
+            <h3>Software Creator</h3>
+            <div class="te-label" style="margin-top:4px">Stages 7 · 9 · 11 — Build Plan, Build, Deploy</div>
+          </div>
+          <span class="te-tag te-tag--ink">ink</span>
+        </div>
+        <p>Operates in two shells. The outer shell architects the system before any code is written. The inner shell builds every module and route against the approved architecture spec and deployment config. Deploys directly to live — never localhost.</p>
+        <div class="sys-output"><div class="te-screen">→ architecture_spec.md → src/ → live URL</div></div>
+      </div>
+
+      <div class="sys-card te-panel c-red">
+        <div class="sys-head">
+          <div>
+            <h3>Audit Agent</h3>
+            <div class="te-label" style="margin-top:4px">Stage 10 — Audit</div>
+          </div>
+          <span class="te-tag te-tag--red">pop-red</span>
+        </div>
+        <p>Runs after the inner shell builds and before any deployment. Checks the build against the architecture spec — missing modules, rule violations, deployment config completeness. Flags gaps before they reach production. No stake in the build it reviews.</p>
+        <div class="sys-output"><div class="te-screen">→ audit_report.md</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     04 — TWO MOMENTS OF YOUR TIME
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">04</span>
+      <h2>Two moments of your time</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">start · audit · done</span>
+    </div>
+
+    <p class="gate-intro">
+      The pipeline is designed to minimize the human time required. You are not a task manager here —
+      you are a decision maker at two specific moments. Everything between those moments runs without you.
+    </p>
+
+    <div class="gates te-recess">
+      <div class="gate-row">
+        <div class="gate-index">01</div>
+        <div>
+          <h4>The start — concept and git repo</h4>
+          <p>You describe what you want to build in one line. The Concept Developer interviews you in two structured batches to develop that into a complete brief covering goals, users, outcomes, and design ethos. You also provide the git repository URL where the built code will be pushed. That is the entirety of your setup work.</p>
+        </div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-index">02</div>
+        <div>
+          <h4>The end — reading the audit report</h4>
+          <p>After the full pipeline has run — concept development, process mapping, architecture, design, visual design, build plan, and build — the Audit Agent verifies every module against the spec and produces a report. You read it. If the build passes, the code is pushed to your git repository and you set the environment variables in Coolify. The software is live.</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size: 13px; color: var(--ink-3); margin-top: 18px; line-height: 1.7;">
+      Everything between those two moments — every spec, every decision, every line of code — runs without asking. That is the point.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     05 — DESIGN DECISIONS
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">05</span>
+      <h2>The thinking behind it</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">design decisions · why they were made</span>
+    </div>
+
+    <div class="decisions">
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">⊘</div>
+        <h3>No localhost — ever</h3>
+        <p>All builds target live deployment environments from the first file written. The deployment config must exist before any code starts. Local environments diverge from production. Testing locally gives false confidence. The cost of setting up real infrastructure once is lower than the cost of debugging environment-specific failures later.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">◎</div>
+        <h3>Deployment config before code</h3>
+        <p>The <code>deployment_config.md</code> — repo URL, VPS app names, database connection, environment variables, domain — must be complete and confirmed before the inner shell writes a single line. Code written for the wrong environment is not deployable code. Configuration is not a detail; it is the foundation.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">▦</div>
+        <h3>Everything tracked in three files</h3>
+        <p>Every session, every agent, every decision is logged to <code>project_record.md</code> (phase and gates), <code>dev_record.md</code> (append-only build history), and <code>connection_map.json</code> (live topology). Without a persistent, machine-readable record, every session starts from zero. The record is the continuity.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">→</div>
+        <h3>Sub-systems stay intact</h3>
+        <p>Process Codifier, ICM Builder, and Software Creator are not merged or flattened. They live as independent sub-systems with their own methodologies and evolve independently. The meta-orchestrator handles coordination; sub-systems handle execution.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">◈</div>
+        <h3>Concept Developer at the front</h3>
+        <p>Every downstream stage was inheriting a one-line concept and guessing the rest. The guesses compounded. A researched, gated brief at the front means Process Codifier extracts the right workflow, ICM Builder optimizes for the right goals, and Visual Designer designs from a stated ethos instead of inventing one.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">◻</div>
+        <h3>Visual Designer as a gated stage</h3>
+        <p>When no agent owns aesthetics, the build defaults to the generic AI look — rounded cards, soft shadows, Inter, indigo. The Visual Designer makes the visual direction a gated, reviewable decision. The banned list it produces binds the Software Creator's UI work. Without this stage, nobody decides the look.</p>
+      </div>
+
+      <div class="decision te-panel">
+        <div class="decision-glyph">◉</div>
+        <h3>Audit before every deploy</h3>
+        <p>Inner shell agents build sequentially. Errors compound. A dedicated audit pass before deployment catches systemic gaps — missing modules, rule violations, config inconsistencies — before they reach production. The audit agent has no stake in the build it reviews.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     06 — PROJECT OUTPUT
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">06</span>
+      <h2>What a project produces</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">one folder · everything in it</span>
+    </div>
+
+    <p class="gate-intro">
+      Every project lives in <strong>_projects/{project-name}/</strong> —
+      the complete record of what was built, why, and how to change it.
+    </p>
+
+    <div class="file-tree-wrap">
+      <div class="te-screen" style="padding: 0;">
+        <div class="file-tree-head">
+          <span>PROJECT RECORD</span>
+          <span style="margin-left:auto;">_projects/{project-name}/</span>
+        </div>
+        <div class="file-tree-body">
+          <div class="ft-dir">_projects/{project-name}/</div>
+          <div class="ft-file">project_record.md<em>        ← master state: phase, gates cleared, live URL, blockers</em></div>
+          <div class="ft-file">dev_record.md<em>             ← append-only build log: what, who, when, decisions</em></div>
+          <div class="ft-file">connection_map.json<em>       ← live topology: modules, edges, health</em></div>
+          <div class="ft-gap"></div>
+          <div class="ft-file">concept_brief.md<em>          ← goals, users, design ethos, market research</em></div>
+          <div class="ft-file">process_map.md<em>            ← real-world workflow: stages, players, friction</em></div>
+          <div class="ft-file">icm_spec/<em>                 ← multi-agent architecture: all specialist folders</em></div>
+          <div class="ft-file">design_spec.md<em>            ← views, user flows, role access</em></div>
+          <div class="ft-file">visual_spec.md<em>            ← visual direction, full token system, banned list</em></div>
+          <div class="ft-gap"></div>
+          <div class="ft-file">architecture_spec.md<em>      ← modules, schema, event bus, deployment topology</em></div>
+          <div class="ft-file">deployment_config.md<em>      ← repo, VPS apps, database, env vars, domain</em></div>
+          <div class="ft-file">audit_report.md<em>           ← build verification against spec</em></div>
+          <div class="ft-file">src/<em>                      ← the built software</em></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     07 — SCOPE
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">07</span>
+      <h2>What this is not</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">scope boundaries</span>
+    </div>
+
+    <div class="not-list te-recess">
+      <div class="not-row">
+        <span class="not-x">✕</span>
+        <span><strong>Not a general-purpose coding assistant.</strong> It does not answer one-off questions or write isolated scripts. Every build goes through the full pipeline.</span>
+      </div>
+      <div class="not-row">
+        <span class="not-x">✕</span>
+        <span><strong>Not a project management tool.</strong> There are no tickets, no sprints, no assignees. There are stages, gates, and outputs.</span>
+      </div>
+      <div class="not-row">
+        <span class="not-x">✕</span>
+        <span><strong>Not a local development environment.</strong> It has no localhost. The first deployment is the only deployment target.</span>
+      </div>
+      <div class="not-row">
+        <span class="not-x">✕</span>
+        <span><strong>Not a design tool producing visual mockups.</strong> The Visual Designer produces a token system and a direction — not wireframes or Figma files.</span>
+      </div>
+      <div class="not-row">
+        <span class="not-x">✕</span>
+        <span><strong>Not a replacement for human judgment at gates.</strong> The pipeline pauses at every gate. Agents execute; humans approve the direction.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     08 — EXAMPLE PROJECT
+═══════════════════════════════════════ -->
+<div class="page-section">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-no">08</span>
+      <h2>Built with this</h2>
+      <span class="sec-line"></span>
+      <span class="sec-cap">athletic-os · concept to code</span>
+    </div>
+
+    <p class="gate-intro">
+      Athletic OS is the first project built end-to-end through Solution Creator.
+      A single-user, self-hosted training instrument — lifts, bouldering, runs, weight — with a
+      closed-loop weekly AI coaching cycle. Below is how it appears in the Solution Creator dashboard.
+    </p>
+
+    <div class="ex-card">
+
+      <div class="ex-head">
+        <span class="ex-id">athletic-os</span>
+        <span class="ex-src">source: factory</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">has_src · has_icm_spec</span>
+        <span class="ex-build-badge">BUILD COMPLETE</span>
+      </div>
+
+      <div class="ex-stages">
+        <span class="ex-stage done">concept</span>
+        <span class="ex-stage done">process</span>
+        <span class="ex-stage done">architecture</span>
+        <span class="ex-stage done">design</span>
+        <span class="ex-stage done">visual_design</span>
+        <span class="ex-stage done">build_plan</span>
+        <span class="ex-stage done">build</span>
+        <span class="ex-stage pending">audit →</span>
+        <span class="ex-stage">deploy</span>
+      </div>
+
+      <div class="ex-artifacts">
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">concept_brief.md</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">process_map.md</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">design_spec.md</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">visual_spec.md</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">architecture_spec.md</span>
+        <span class="te-tag" style="font-family:var(--mono);font-size:10px;">deployment_config.md</span>
+        <span class="te-tag te-tag--ink" style="font-family:var(--mono);font-size:10px;">src/ (backend · ai_layer · migrations)</span>
+      </div>
+
+      <div class="ex-body">
+        <div class="ex-desc">
+          React 18 + Vite PWA · FastAPI · SQLite · Claude API · Coolify on VPS.<br>
+          3 AI agents (Weekly Coach · Case Advisor · Log Parser) · 8 route modules · 9 data models.<br>
+          Visual direction: <em>Telemetría de pista</em> — dark cockpit, Barlow Condensed, amber-only accent, six Motion Boulder grade colors reserved exclusively for grade encoding.
+        </div>
+        <a class="ex-link" href="athletic-os/">View project →</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="wrap">
+    <div class="footer-brand">Solution <span>Creator</span> &nbsp;·&nbsp; v0.2</div>
+    <div class="footer-agents">
+      <span class="te-tag te-tag--green">Concept Developer</span>
+      <span class="te-tag te-tag--yellow">Process Codifier</span>
+      <span class="te-tag te-tag--blue">ICM Builder</span>
+      <span class="te-tag">Designer</span>
+      <span class="te-tag te-tag--orange">Visual Designer</span>
+      <span class="te-tag te-tag--ink">Software Creator</span>
+      <span class="te-tag te-tag--red">Audit Agent</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
